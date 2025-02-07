@@ -2,6 +2,8 @@
 #include "pytorch_cpp_helper.hpp"
 #include "pytorch_device_registry.hpp"
 
+#include <torch/script.h>
+
 void deformable_im2col_impl(Tensor data_im, Tensor data_offset,
                             const int channels, const int height,
                             const int width, const int ksize_h,
@@ -137,11 +139,11 @@ void deform_conv_shape_check(at::Tensor input, at::Tensor offset,
   }
 }
 
-void deform_conv_forward(Tensor input, Tensor weight, Tensor offset,
-                         Tensor output, Tensor columns, Tensor ones, int kW,
-                         int kH, int dW, int dH, int padW, int padH,
-                         int dilationW, int dilationH, int group,
-                         int deformable_group, int im2col_step) {
+Tensor deform_conv_forward(Tensor input, Tensor weight, Tensor offset,
+                         Tensor output, Tensor columns, Tensor ones, int64_t kW,
+                         int64_t kH, int64_t dW, int64_t dH, int64_t padW, int64_t padH,
+                         int64_t dilationW, int64_t dilationH, int64_t group,
+                         int64_t deformable_group, int64_t im2col_step) {
   if (input.device().is_cuda()) {
 #ifdef MMCV_WITH_CUDA
     CHECK_CUDA_INPUT(input);
@@ -255,6 +257,8 @@ void deform_conv_forward(Tensor input, Tensor weight, Tensor offset,
     input = input.view({nInputPlane, inputHeight, inputWidth});
     offset = offset.view({offset.size(1), offset.size(2), offset.size(3)});
   }
+
+  return output;
 }
 
 void deform_conv_backward_input(Tensor input, Tensor offset, Tensor gradOutput,
@@ -515,3 +519,6 @@ void deform_conv_backward_parameters(Tensor input, Tensor offset,
     input = input.view({nInputPlane, inputHeight, inputWidth});
   }
 }
+
+static auto registry =
+  torch::RegisterOperators("mmcv::deform_conv_forward", &deform_conv_forward);

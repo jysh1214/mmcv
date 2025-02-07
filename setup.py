@@ -426,6 +426,19 @@ def get_extensions():
             libraries=libraries)
         extensions.append(ext_ops)
 
+    # Add custom op `deform_conv_forward`.
+    extension = CppExtension
+    include_dirs.append(os.path.abspath("./mmcv/ops/csrc/parrots"))
+    ext_ops = extension(
+        name="deform_conv_forward",
+        sources=[
+            "./mmcv/ops/csrc/parrots/deform_conv.cpp",
+        ],
+        include_dirs=include_dirs,
+        language="c++",
+    )
+    extensions.append(ext_ops)
+
     return extensions
 
 
